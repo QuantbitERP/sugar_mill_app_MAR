@@ -13,7 +13,6 @@ class AddCaneService {
     var data = json.encode({
       "data": cane,
     });
-    Logger().i(cane.toString());
     try {
       var dio = Dio();
       var response = await dio.request(

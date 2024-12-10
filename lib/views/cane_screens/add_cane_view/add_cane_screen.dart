@@ -28,7 +28,7 @@ class _AddCaneScreenState extends State<AddCaneScreen> {
                     ? Text(model.canedata.plotNo.toString())
                     : const Text('New Cane Registration'),
               ),
-              body: fullScreenLoader(
+              body: shimmerForm(
                 child: SingleChildScrollView(
                   child: Form(
                     key: model.formKey,
@@ -582,12 +582,6 @@ class _AddCaneScreenState extends State<AddCaneScreen> {
                                       ? 'Please enter a Survey Number'
                                       : null,
                                   onChanged: model.setSurveyNumber,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                      RegExp(
-                                          r'[0-9@#$%^&8()_+={}[/]|\\:;"\<>,.?/-]'),
-                                    ),
-                                  ],
                                 ),
                               ),
                               const SizedBox(

@@ -11,9 +11,13 @@ class ListAgriModel extends BaseViewModel {
   TextEditingController nameController = TextEditingController();
   TextEditingController seasonController = TextEditingController();
   TextEditingController villageController = TextEditingController();
+  TextEditingController plotController = TextEditingController();
+
   String caneSeasonFilter = "";
   String caneVillageFilter = "";
   String caneNameFilter = "";
+  String canePlotFilter = "";
+
   List<AgriListModel> agriList = [];
   List<AgriListModel> filteredAgriList = [];
   List<String> seasonList = [""];
@@ -64,13 +68,14 @@ class ListAgriModel extends BaseViewModel {
 
 
   void getAgriListByVillageFarmerNameFilter(
-      {String? village, String? name}) async {
+      {String? village, String? name,String? plot}) async {
     caneNameFilter = name ?? caneNameFilter;
     caneVillageFilter = village ?? caneVillageFilter;
+    canePlotFilter=plot ?? canePlotFilter;
     notifyListeners();
     filteredAgriList = await ListAgriService()
         .getAgriListByVillageFarmerNameFilter(
-            caneVillageFilter, caneNameFilter);
+            caneVillageFilter, caneNameFilter,canePlotFilter);
     notifyListeners();
   }
 

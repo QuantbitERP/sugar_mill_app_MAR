@@ -6,6 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:logger/logger.dart';
 import 'package:new_version_plus/new_version_plus.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stacked/stacked.dart';
 import 'package:sugar_mill_app/constants.dart';
@@ -25,16 +26,23 @@ class HomeViewModel extends BaseViewModel {
   List<String> season = [""];
   List<Employee> empList = [];
   List<Checkin> checkinList = [];
-
+  String appVersion = "Loading...";
   String? greeting;
   String? imageurl;
-
+  Future<void> getAppVersion() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+        appVersion = "Version ${packageInfo.version} (${packageInfo.buildNumber})";
+    } catch (e) {
+        appVersion = "Version info unavailable";
+    }
+  }
   initialise(BuildContext context) async {
     setBusy(true);
     final newVersion = NewVersionPlus(
       androidId: 'com.quantbit.sugarapp',
     );
-
+    getAppVersion();
     Timer(const Duration(milliseconds: 800), () {
       checkNewVersion(newVersion,context);
     });
@@ -48,7 +56,7 @@ class HomeViewModel extends BaseViewModel {
     }
     handleGreeting();
     handleImage();
-    dashboard = await CheckInServices().dashboard() ?? Dashboard();
+
     setBusy(false);
   }
 
@@ -69,23 +77,19 @@ class HomeViewModel extends BaseViewModel {
     Logger().i(status);
     if(status != null) {
       if(status.canUpdate) {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return UpdateDialog(
-              allowDismissal: true,
-              description: status.releaseNotes!,
-              version: status.storeVersion,
-              appLink: status.appStoreLink,
-            );
-          },
-        );
-        // newVersion.showUpdateDialog(
-        //   context: context,
-        //   versionStatus: status,
-        //   dialogText: 'New Version is available in the store (${status.storeVersion}), update now!',
-        //   dialogTitle: 'Update is Available!',
-        // );
+        if(context.mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return UpdateDialog(
+                allowDismissal: true,
+                description: status.releaseNotes!,
+                version: status.storeVersion,
+                appLink: status.appStoreLink,
+              );
+            },
+          );
+        }
       }
     }
   }

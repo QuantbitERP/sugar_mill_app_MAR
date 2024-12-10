@@ -9,14 +9,17 @@ import '../../../services/add_cane_service.dart';
 import '../../../services/list_cane_service.dart';
 
 class ListCaneModel extends BaseViewModel {
-  TextEditingController idcontroller = TextEditingController();
-  TextEditingController namecontroller = TextEditingController();
-  TextEditingController seasoncontroller = TextEditingController();
+  TextEditingController idController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController seasonController = TextEditingController();
+  TextEditingController plotController = TextEditingController();
+
   List<CaneListModel> caneList = [];
   List<CaneListModel> canefilterList = [];
   String caneNameFilter = "";
   String caneseasonFilter = "";
   String canevillageFilter = "";
+  String plotNoFilter = "";
 
   Color getTileColor(String? plantationStatus) {
     switch (plantationStatus) {
@@ -51,7 +54,7 @@ class ListCaneModel extends BaseViewModel {
           (season) => season.startsWith("$currentYear-"),
       orElse: () => seasonlist.last, // If no season matches the current year, take the last one
     );
-    seasoncontroller.text=latestSeason;
+    seasonController.text=latestSeason;
     // canefilterList = caneList;
     await filterListByNameAndVillage(season: latestSeason);
     setBusy(false);
@@ -70,24 +73,22 @@ Future<void> refresh() async {
         (season) => season.startsWith("$currentYear-"),
     orElse: () => seasonlist.last, // If no season matches the current year, take the last one
   );
-  seasoncontroller.text=latestSeason;
+  seasonController.text=latestSeason;
   await filterListByNameAndVillage(season: latestSeason);
   notifyListeners();
 }
 
 
-  Future<void> filterListByNameAndVillage({String? season,String? name, String? village}) async {
+  Future<void> filterListByNameAndVillage({String? season,String? name, String? village,String? plotNo}) async {
     caneseasonFilter=season ?? caneseasonFilter;
     caneNameFilter = name ?? caneNameFilter;
     canevillageFilter = village ?? canevillageFilter;
+    plotNoFilter=plotNo ?? plotNoFilter;
     notifyListeners();
     canefilterList = await ListCaneService()
-        .getCaneListByNameFilter(caneseasonFilter,caneNameFilter, canevillageFilter);
-
+        .getCaneListByNameFilter(caneseasonFilter,caneNameFilter, canevillageFilter,plotNoFilter);
     notifyListeners();
   }
-
-
 
   void onRowClick(BuildContext context, CaneListModel? caneList) {
     Navigator.pushNamed(

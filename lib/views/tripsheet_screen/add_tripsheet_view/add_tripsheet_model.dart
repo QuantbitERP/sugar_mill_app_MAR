@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked/stacked_annotations.dart';
+import 'package:sugar_mill_app/models/CaneRoute.dart';
 import 'package:sugar_mill_app/models/trip_crop_harvesting_model.dart';
 import 'package:sugar_mill_app/models/tripsheet.dart';
 import 'package:sugar_mill_app/views/tripsheet_screen/add_tripsheet_list/add_tripsheet_list_model.dart';
@@ -57,6 +58,7 @@ class AddTripSheetModel extends BaseViewModel {
   CartInfo cartinfo = CartInfo();
   List<WaterSupplierList> waterSupplier = [];
   List<CaneRoute> routeList = [];
+  List<String> gangTypeList=[];
   List<TransportInfo> transportList = [];
   List<VehicleType> vehicleTypeList = [];
   String? plotNo;
@@ -73,6 +75,7 @@ class AddTripSheetModel extends BaseViewModel {
   double? dist;
   String? transName;
   String? vehicleType;
+  String? gangType;
   String? harCode;
   String? harName;
   String? eNo;
@@ -115,7 +118,7 @@ class AddTripSheetModel extends BaseViewModel {
     setBusy(false);
   }
 
-  initialise(BuildContext context, String tripId) async {
+  Future<void> initialize(BuildContext context, String tripId) async {
     setBusy(true);
     plotList = await AddTripSheetServices().fetchPlot("");
     masters = await AddTripSheetServices().getMasters() ?? TripSheetMasters();
@@ -144,82 +147,150 @@ class AddTripSheetModel extends BaseViewModel {
       }
     }
 
-    if (tripId != "") {
-      isEdit = true;
-      tripSheetData =
-          await AddTripSheetServices().getTripsheet(tripId) ?? TripSheet();
-      cartinfo = await AddTripSheetServices()
-              .cartInfo(tripSheetData.cartno.toString()) ??
-          CartInfo();
+    try {
+      // Fetch data from services
+      final results = await Future.wait([
+        AddTripSheetServices().fetchPlot(""),
+        AddTripSheetServices().getMasters(),
+      ]);
 
-      applyFlatRate = tripSheetData.applyFlatRate == 1 ? true : false;
-      // selectedCaneRoute = tripSheetData.routeName;
-      for (CaneRoute i in routeList) {
-        if (i.name == tripSheetData.routeName) {
-          selectedCaneRoute = i.route;
-          notifyListeners();
-          Logger().i(selectedCaneRoute);
-        }
-      }
-      for (CropHarvestingModel i in plotList) {
-        Logger().i(i.toJson());
-        if(i.name==tripSheetData.plotNo){
-          plotNo=i.plotNo;
-        }
-        if (i.growerCode == tripSheetData.farmerCode) {
-          selectedfarcode = i.vendorCode;
-          notifyListeners();
-          Logger().i(selectedfarcode);
-        }
-      }
-      for (WaterSupplierList i in waterSupplier) {
-        if (i.name == tripSheetData.waterSupplier) {
-          watersuppliercode = i.existingSupplierCode;
-          notifyListeners();
-          Logger().i(i.existingSupplierCode);
-        }
-      }
-      String? formattedDate = tripSheetData.plantationDate != null
-          ? DateFormat('dd-MM-yyyy')
-              .format(DateTime.parse(tripSheetData.plantationDate ?? ""))
-          : tripSheetData.plantationDate ?? "";
-      plantingDateController.text = formattedDate;
-      notifyListeners();
-      slipnoController.text = tripSheetData.slipNo.toString();
-      deductionController.text =
-          tripSheetData.deduction?.toStringAsFixed(0) ?? "0";
-      watershareController.text = tripSheetData.waterShare.toString();
-      engineNumberController.text=tripSheetData.vehicleNumber.toString();
-      tolly2Controller.text=tripSheetData.tolly2.toString();
-      tolly1Controller.text=tripSheetData.tolly1.toString();
-    }
+      // Assign results
+      plotList = results[0] as List<CropHarvestingModel>;
+      masters = results[1] as TripSheetMasters? ?? TripSheetMasters();
+      // Initialize master lists
+      season = masters.season ?? [];
+      plantList = masters.plant ?? [];
+      routeList = masters.caneRoute ?? [];
+      gangTypeList=masters.gangType ?? [];
+      transportList = masters.transportInfo ?? [];
+      waterSupplier = masters.waterSupplierList ?? [];
+      vehicleTypeList = masters.vehicleType ?? [];
+      ropeType = masters.rope ?? [];
+      tripSheetData.branch = "Bedkihal";
+Logger().i(masters.toJson());
+      // Get the latest season
+      int currentYear = DateTime.now().year;
+      tripSheetData.season = season.firstWhere(
+            (seasonItem) => seasonItem.startsWith("$currentYear-"),
+        orElse: () => season.isNotEmpty ? season.last : "",
+      );
 
-    if (waterSupplier.isEmpty) {
+      // Filter transporters for the selected season
+      transportList = transportList.where((transporter) {
+        return transporter.season == tripSheetData.season;
+      }).toList();
+
+      // Check for empty lists and show error messages
+      _checkEmptyList(
+        context,
+        list: season,
+        message: 'No season data available. Logging out.',
+        action: () => logout(context),
+      );
+
+      _checkEmptyList(
+        context,
+        list: waterSupplier,
+        message: 'There is no farmer available.',
+      );
+
+      _checkEmptyList(
+        context,
+        list: transportList,
+        message: 'There is no transporter available.',
+      );
+
+      // Handle trip edit mode
+      if (tripId.isNotEmpty) {
+        await _initializeEditMode(tripId);
+      }
+    } catch (e) {
+      Logger().e("Initialization failed: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            'There is No farmer available',
+            'An error occurred during initialization.',
             style: TextStyle(color: Colors.white, fontSize: 15),
           ),
-          duration: Duration(seconds: 3), // Adjust the duration as needed
+          duration: Duration(seconds: 3),
         ),
       );
+    } finally {
+      setBusy(false);
     }
-    if (transportList.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            'There is No Transporter available',
-            style: TextStyle(color: Colors.white, fontSize: 15),
-          ),
-          duration: Duration(seconds: 3), // Adjust the duration as needed
-        ),
-      );
-    }
-    setBusy(false);
   }
+
+  Future<void> _initializeEditMode(String tripId) async {
+    isEdit = true;
+    tripSheetData = await AddTripSheetServices().getTripsheet(tripId) ?? TripSheet();
+    cartinfo = await AddTripSheetServices()
+        .cartInfo(tripSheetData.cartno.toString()) ??
+        CartInfo();
+
+    applyFlatRate = tripSheetData.applyFlatRate == 1;
+    slipnoController.text = tripSheetData.slipNo.toString();
+    deductionController.text = tripSheetData.deduction?.toStringAsFixed(0) ?? "0";
+    watershareController.text = tripSheetData.waterShare.toString();
+    engineNumberController.text = tripSheetData.vehicleNumber.toString();
+    tolly1Controller.text = tripSheetData.tolly1.toString();
+    tolly2Controller.text = tripSheetData.tolly2.toString();
+
+    plantingDateController.text = tripSheetData.plantationDate != null
+        ? DateFormat('dd-MM-yyyy')
+        .format(DateTime.parse(tripSheetData.plantationDate ?? ""))
+        : "";
+
+    selectedCaneRoute = routeList
+        .firstWhere(
+          (route) => route.name == tripSheetData.routeName,
+      orElse: () => CaneRoute(),
+    )
+        .route;
+
+    plotNo = plotList
+        .firstWhere(
+          (plot) => plot.name == tripSheetData.plotNo,
+      orElse: () => CropHarvestingModel(),
+    )
+        .plotNo;
+
+    selectedfarcode = plotList
+        .firstWhere(
+          (plot) => plot.growerCode == tripSheetData.farmerCode,
+      orElse: () => CropHarvestingModel(),
+    )
+        .vendorCode;
+
+    watersuppliercode = waterSupplier
+        .firstWhere(
+          (supplier) => supplier.name == tripSheetData.waterSupplier,
+      orElse: () => WaterSupplierList(),
+    )
+        .existingSupplierCode;
+
+    notifyListeners();
+  }
+
+  void _checkEmptyList(BuildContext context,
+      {required List<dynamic> list,
+        required String message,
+        VoidCallback? action}) {
+    if (list.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            message,
+            style: const TextStyle(color: Colors.white, fontSize: 15),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      if (action != null) action();
+    }
+  }
+
 
   Future<void> selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -282,43 +353,46 @@ class AddTripSheetModel extends BaseViewModel {
     notifyListeners();
   }
 
+  void setSelectedPlotNo(String? plotNumber) {
+    final selectedGrowerData = plotList.firstWhere(
+          (growerData) => growerData.plotNo == plotNumber,
+      orElse: () => CropHarvestingModel(), // Provide a fallback
+    );
 
-  void setSelectPlotNo(String? plotNumber) {
-    final selectedGrowerData =
-        plotList.firstWhere((growerData) => growerData.plotNo == plotNumber);
-    Logger().i(plotNumber);
-    plotNo=selectedGrowerData.plotNo;
-    tripSheetData.plotNo=selectedGrowerData.id;
     Logger().i(selectedGrowerData.toJson().toString());
+    plotNo = selectedGrowerData.plotNo;
+    tripSheetData.plotNo = selectedGrowerData.id;
     farmerCode = selectedGrowerData.growerCode;
     farmerName = selectedGrowerData.growerName;
     village = selectedGrowerData.area;
     caneVariety = selectedGrowerData.cropVariety;
     surveyNo = selectedGrowerData.surveyNumber;
     area = selectedGrowerData.areaAcrs;
-    plantingDateController.text =
-        selectedGrowerData.plantattionRatooningDate.toString();
-    tripSheetData.plotNo = selectedGrowerData.name;
-    tripSheetData.platNoId = selectedGrowerData.id;
-    routename = selectedGrowerData.route;
-    dist = double.tryParse(selectedGrowerData.routeKm ?? "");
-    final selectedrouteData =
-        routeList.firstWhere((growerData) => growerData.name == routename);
-    selectedCaneRoute = selectedrouteData.route;
-    selectedfarcode = selectedGrowerData.vendorCode;
-    Logger().i(selectedfarcode);
-    tripSheetData.vendorCode = selectedGrowerData.vendorCode;
-    tripSheetData.farmerCode = farmerCode;
-    tripSheetData.farmerName = farmerName;
-    tripSheetData.plantationDate = plantingDateController.text;
-    tripSheetData.fieldVillage = village;
-    tripSheetData.caneVariety = caneVariety;
-    tripSheetData.surveryNo = surveyNo;
-    tripSheetData.areaAcre = area;
-    tripSheetData.routeName = routename;
-    tripSheetData.distance = dist;
+
+    plantingDateController.text = selectedGrowerData.plantattionRatooningDate ?? "";
+    tripSheetData
+      ..plotNo = selectedGrowerData.name
+      ..platNoId = selectedGrowerData.id
+      ..vendorCode = selectedGrowerData.vendorCode
+      ..farmerCode = farmerCode
+      ..farmerName = farmerName
+      ..plantationDate = plantingDateController.text
+      ..fieldVillage = village
+      ..caneVariety = caneVariety
+      ..surveryNo = surveyNo
+      ..areaAcre = area
+      ..routeName = selectedGrowerData.route
+      ..distance = double.tryParse(selectedGrowerData.routeKm ?? "");
+
+    final selectedRouteData = routeList.firstWhere(
+          (route) => route.name == selectedGrowerData.route,
+      orElse: () => CaneRoute(),
+    );
+
+    selectedCaneRoute = selectedRouteData.route;
+
     notifyListeners();
-  }
+    }
 
   void setSelectedRoute(CaneRoute route) {
     selectedCaneRoute = route.route;
@@ -329,9 +403,15 @@ class AddTripSheetModel extends BaseViewModel {
 
   void setSelectedTransCode(String? traCode) async {
     tripSheetData.oldTransporterCode = traCode;
-    final selectedGrowerData = transportList
-        .firstWhere((growerData) => growerData.oldNo.toString() == traCode);
+
+    // Safely find the selected grower data using firstWhere with orElse
+    final selectedGrowerData = transportList.firstWhere(
+          (growerData) => growerData.oldNo.toString() == traCode,
+      orElse: () => TransportInfo(),  // If no match, return null
+    );
+
     Logger().i(selectedGrowerData);
+
     if (selectedGrowerData.oldNo.toString().toLowerCase() != "self") {
       tripSheetData.transporterCode = selectedGrowerData.name;
       transName = selectedGrowerData.transporterName;
@@ -340,14 +420,14 @@ class AddTripSheetModel extends BaseViewModel {
       eNo = selectedGrowerData.vehicleNo;
       trl_1 = selectedGrowerData.trolly1;
       tri_2 = selectedGrowerData.trolly2;
-      gang = selectedGrowerData.gangType;
+
       tripSheetData.vehicleNumber = eNo;
-      tripSheetData.gangType = gang;
       tripSheetData.tolly1 = trl_1;
       tripSheetData.tolly2 = tri_2;
       tripSheetData.transporterName = transName;
       tripSheetData.vehicleType = vehicleType;
       tripSheetData.cartno = null;
+
       boolFlatRte();
       setSelectedEngine(tripSheetData.vehicleNumber);
       setSelectedTy_1(tripSheetData.tolly1);
@@ -357,11 +437,17 @@ class AddTripSheetModel extends BaseViewModel {
       tripSheetData.oldTransporterCode = selectedGrowerData.oldNo;
       tripSheetData.transporter = tripSheetData.farmerCode;
       tripSheetData.transporterName = tripSheetData.farmerName;
+
+      setSelectedEngine(null);
+      setSelectedTy_1(null);
+      setSelectedTy_2(null);
+      tripSheetData.vehicleType = null;
     }
-    // cartinfo=await AddTripSheetServices().cartinfo(tripSheetData.transporterCode ?? "",tripSheetData.vehicleType ?? "",tripSheetData.season ?? "");
-    // Logger().i(cartlist.length);
+
+
     notifyListeners();
   }
+
 
   String? watersuppliercode;
 
@@ -396,11 +482,6 @@ class AddTripSheetModel extends BaseViewModel {
     notifyListeners();
   }
 
-  void setSelectedGang(String? gangType) {
-    gang = gangType;
-    tripSheetData.gangType = gang;
-    notifyListeners();
-  }
 
   void setSelectedTy_1(String? tol_1) {
     trl_1 = tol_1;
@@ -418,15 +499,23 @@ class AddTripSheetModel extends BaseViewModel {
 
   void setSelectedHarCode(String? hCode) {
     tripSheetData.harvesterCodeOld = hCode;
-    final selectedGrowerData = transportList
-        .firstWhere((growerData) => growerData.oldNo.toString() == hCode);
+
+    final selectedGrowerData = transportList.firstWhere(
+          (growerData) => growerData.oldNo.toString() == hCode,
+      orElse: () => TransportInfo(),
+    );
+
+    Logger().i(selectedGrowerData.toJson());
+
     if (selectedGrowerData.oldNo.toString().toLowerCase() != "self") {
+      // Set fields when not "SELF"
       tripSheetData.harvestingCodeHt = selectedGrowerData.name;
       harCode = selectedGrowerData.harvesterCode;
       tripSheetData.harvesterCodeH = harCode;
       harName = selectedGrowerData.harvesterName;
       tripSheetData.harvesterNameH = harName;
     } else {
+      // Set fields when "SELF"
       tripSheetData.harvesterCodeOld = selectedGrowerData.oldNo;
       tripSheetData.harvesterCode = selectedGrowerData.name;
       tripSheetData.harvestingCodeHt = selectedGrowerData.name;
@@ -435,8 +524,16 @@ class AddTripSheetModel extends BaseViewModel {
       tripSheetData.harvesterName = tripSheetData.farmerName;
       tripSheetData.harvesterNameH = tripSheetData.farmerName;
     }
+
+    // Update gangType regardless of "SELF" or not
+    gangType = selectedGrowerData.gangType;
+    tripSheetData.gangType = gangType;
+
+    Logger().i(tripSheetData.toJson());
+
     notifyListeners();
   }
+
 
   void setSelectedHarName(String? hName) {
     harName = hName;
@@ -455,7 +552,11 @@ class AddTripSheetModel extends BaseViewModel {
     tripSheetData.vehicleType = vehicleType;
     notifyListeners();
   }
-
+  void setSelectedGType(String? vType) {
+    gangType = vType;
+    tripSheetData.gangType = gangType;
+    notifyListeners();
+  }
   void setSelectedDistance(String? distance) {
     tripSheetData.distance = double.tryParse(distance ?? "");
     notifyListeners();
@@ -517,17 +618,31 @@ class AddTripSheetModel extends BaseViewModel {
   }
 
   void boolFlatRte() {
-    final selectedroute = routeList
-        .firstWhere((growerData) => growerData.name == tripSheetData.routeName);
+    // Safely find the selected route using firstWhere with orElse
+    final selectedRoute = routeList.firstWhere(
+          (route) => route.name == tripSheetData.routeName,
+      orElse: () => CaneRoute(), // If no match, return null
+    );
+
+    // Safely find the selected vehicle type using firstWhere with orElse
     final selectedVehicleType = vehicleTypeList.firstWhere(
-        (growerData) => growerData.name == tripSheetData.vehicleType);
-    if (selectedroute.applyFlatRate == 1 &&
-        selectedVehicleType.applyFlatRate == 1) {
+          (vehicleType) => vehicleType.name == tripSheetData.vehicleType,
+      orElse: () => VehicleType(), // If no match, return null
+    );
+
+    // Check if both selectedRoute and selectedVehicleType are found
+    if (selectedRoute.applyFlatRate == 1 && selectedVehicleType.applyFlatRate == 1) {
       setApplyFlatRate(true);
-      tripSheetData.flatRate = double.tryParse(selectedroute.flatRate ?? "0.0");
-      notifyListeners();
+      tripSheetData.flatRate = double.tryParse(selectedRoute.flatRate ?? "0.0");
+    } else {
+      setApplyFlatRate(false);
+      tripSheetData.flatRate = 0.0;
     }
+
+    notifyListeners();
   }
+
+
 
   void setApplyFlatRate(bool? applyflatRate) {
     applyFlatRate = applyflatRate ?? false;
@@ -661,6 +776,25 @@ class AddTripSheetModel extends BaseViewModel {
     }
     return null;
   }
+  String? validateVehicleType(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please Enter Vehicle Type';
+    }
+    return null;
+  }
+  String? validateVehicleNumber(String? value) {
+    if (tripSheetData.vehicleType!="BULLOCK CART"){
+    if (value == null || value.isEmpty) {
+      return 'Please Enter Vehicle Number';
+    }}
+    return null;
+  }
+  String? validateGangType(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please Enter Gang Type';
+    }
+    return null;
+  }
 
   String? validateHar(String? value) {
     if (value == null || value.isEmpty) {
@@ -668,6 +802,26 @@ class AddTripSheetModel extends BaseViewModel {
     }
     return null;
   }
+  String? validate(String? value) {
+  // If vehicleType is "TRACTOR" or "TRACTOR CART", Tolly 2 is mandatory
+  if (tripSheetData.vehicleType == "TRACTOR" || tripSheetData.vehicleType == "TRACTOR CART") {
+  if (value == null || value.isEmpty) {
+  return 'Please enter Tolly 1 and Tolly 2';
+  }
+  }
+  return null;
+  }
+  String? validateWaterShare(String? value) {
+    // Check if the watersupplier field is present (not null or empty)
+    if (tripSheetData.waterSupplier != null && tripSheetData.waterSupplier!.isNotEmpty) {
+      // If watersupplier is present, waterShare becomes mandatory
+      if (value == null || value.isEmpty) {
+        return 'Please Enter Water Share';
+      }
+    }
+    return null;
+  }
+
 
   @override
   void dispose() {

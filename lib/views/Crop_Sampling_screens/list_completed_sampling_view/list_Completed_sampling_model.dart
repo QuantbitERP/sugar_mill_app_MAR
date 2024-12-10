@@ -10,11 +10,15 @@ class ListCompletedSamplingModel extends BaseViewModel {
   TextEditingController namecontroller = TextEditingController();
   TextEditingController seasoncontroller = TextEditingController();
   TextEditingController villagecontroller = TextEditingController();
+  TextEditingController plotController = TextEditingController();
+
   List<ListSampling> samplingList = [];
   List<ListSampling> filtersamplingList = [];
   String caneSeasonFilter = "";
   String caneVillageFilter = "";
   String caneNameFilter = "";
+  String canePlotFilter = "";
+
   List<String> seasonlist = [""];
   TextEditingController idcontroller = TextEditingController();
 
@@ -30,43 +34,37 @@ class ListCompletedSamplingModel extends BaseViewModel {
         return const Color(0xFF404944);
     }
   }
-
-  initialise(BuildContext context) async {
+  Future<void> initialise(BuildContext context) async {
     setBusy(true);
-    // samplingList = (await ListCropSamplingServices().getAllCropSamplingList());
-    seasonlist = await AddCaneService().fetchSeason();
 
-    int currentYear = DateTime.now().year;
+    try {
+      // Fetch the season list
+      seasonlist = await AddCaneService().fetchSeason();
 
-    // Filter the list to get the latest season
-    String latestSeason = seasonlist.firstWhere(
-      (season) => season.startsWith("$currentYear-"),
-      orElse: () => seasonlist
-          .last, // If no season matches the current year, take the last one
-    );
-    seasoncontroller.text = latestSeason;
-    // filtersamplingList = samplingList;
-    await filterListBySeason(name: latestSeason);
-    setBusy(false);
-    if (seasonlist.isEmpty) {
-      if(context.mounted){
-      logout(context);
-    }}
-    notifyListeners();
+      if (seasonlist.isEmpty) {
+        if (context.mounted) logout(context);
+        return;
+      }
+
+      // Set the latest season and filter the list
+      String latestSeason = _getLatestSeason();
+      seasoncontroller.text = latestSeason;
+      await getListByvillagefarmernameFilter(season: latestSeason);
+    } catch (error) {
+      // Handle errors appropriately (e.g., logging or showing a snackbar)
+      print("Error initializing: $error");
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
   }
 
   Future<void> refresh() async {
-    int currentYear = DateTime.now().year;
+    if (seasonlist.isEmpty) return;
 
-    // Filter the list to get the latest season
-    String latestSeason = seasonlist.firstWhere(
-          (season) => season.startsWith("$currentYear-"),
-      orElse: () => seasonlist
-          .last, // If no season matches the current year, take the last one
-    );
+    String latestSeason = _getLatestSeason();
     seasoncontroller.text = latestSeason;
-    // filtersamplingList = samplingList;
-    await filterListBySeason(name: latestSeason);
+    await getListByvillagefarmernameFilter(season: latestSeason);
     notifyListeners();
   }
 
@@ -74,28 +72,46 @@ class ListCompletedSamplingModel extends BaseViewModel {
     Navigator.pushNamed(
       context,
       Routes.addCropSamplingScreen,
-      arguments:
-          AddCropSamplingScreenArguments(samplingId: samplingList?.name ?? ""),
+      arguments: AddCropSamplingScreenArguments(samplingId: samplingList?.name ?? ""),
     );
-    // Navigator.pushNamed(context, Routes.detailedFarmerScreen,
-    //     arguments: DetailedFarmerScreenArguments(id: farmresList?.name ?? ""));
   }
 
-  Future<void> filterListBySeason({String? name}) async {
-    caneSeasonFilter = name ?? caneSeasonFilter;
-    notifyListeners();
-    filtersamplingList = await ListCropSamplingServices()
-        .filterCompletedListBySeason(caneSeasonFilter);
-    notifyListeners();
-  }
-
-  void getListByvillagefarmernameFilter({String? village, String? name}) async {
+  Future<void> getListByvillagefarmernameFilter({
+    String? village,
+    String? name,
+    String? season,
+    String? plotNo,
+  }) async {
+    // Update filters
     caneNameFilter = name ?? caneNameFilter;
     caneVillageFilter = village ?? caneVillageFilter;
-    notifyListeners();
-    filtersamplingList = await ListCropSamplingServices()
-        .getCompletedListByvillagefarmernameFilter(
-            caneVillageFilter, caneNameFilter);
-    notifyListeners();
+    caneSeasonFilter = season ?? caneSeasonFilter;
+    canePlotFilter = plotNo ?? canePlotFilter;
+
+    try {
+      // Fetch filtered list
+      filtersamplingList = await ListCropSamplingServices()
+          .getCompletedListByvillagefarmernameFilter(
+        caneVillageFilter,
+        caneNameFilter,
+        caneSeasonFilter,
+        canePlotFilter,
+      );
+    } catch (error) {
+      // Handle fetch errors
+      print("Error fetching filtered list: $error");
+    } finally {
+      notifyListeners();
+    }
   }
+
+  /// Helper method to determine the latest season.
+  String _getLatestSeason() {
+    int currentYear = DateTime.now().year;
+    return seasonlist.firstWhere(
+          (season) => season.startsWith("$currentYear-"),
+      orElse: () => seasonlist.last,
+    );
+  }
+
 }

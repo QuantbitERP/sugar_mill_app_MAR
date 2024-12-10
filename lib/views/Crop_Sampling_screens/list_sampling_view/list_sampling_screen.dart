@@ -19,7 +19,7 @@ class ListSamplingScreen extends StatelessWidget {
         appBar: AppBar(
           title: const AutoSizeText('To Be Crop Sampling List'),
         ),
-        body: fullScreenLoader(
+        body: shimmerListView(
           child: RefreshIndicator(
             onRefresh: model.refresh,
             child: Column(
@@ -34,32 +34,48 @@ class ListSamplingScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(
+                            flex: 1,
                             child: CdropDown(
                               dropdownButton: DropdownButtonFormField<String>(
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Season',
                                 ),
-                                value: model.seasoncontroller.text,
+                                value: model.seasonController.text,
                                 hint: const Text('Select Season'),
-                                items: model.seasonlist.map((val) {
+                                items: model.seasonList.map((val) {
                                   return DropdownMenuItem<String>(
                                     value: val,
                                     child: AutoSizeText(val),
                                   );
                                 }).toList(),
                                 onChanged: (value) {
-                                  model.seasoncontroller.text = value ?? "";
-                                  model.filterListBySeason(name: value);
+                                  model.seasonController.text = value ?? "";
+                                  model.getListByvillagefarmernameFilter(season: value);
                                 },
                               ),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
+                            flex: 1,
                             child: TextField(
                               onChanged: (value) {
-                                model.villagecontroller.text = value;
+                                model.plotController.text = value;
+                                model.getListByvillagefarmernameFilter(
+                                    plotNo: value);
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Plot No',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 1,
+                            child: TextField(
+                              onChanged: (value) {
+                                model.villageController.text = value;
                                 model.getListByvillagefarmernameFilter(
                                     village: value);
                               },
@@ -70,9 +86,10 @@ class ListSamplingScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
+                            flex: 2,
                             child: TextField(
                               onChanged: (value) {
-                                model.namecontroller.text = value;
+                                model.nameController.text = value;
                                 model.getListByvillagefarmernameFilter(
                                     name: value);
                               },
@@ -88,12 +105,12 @@ class ListSamplingScreen extends StatelessWidget {
                 ),
 
                 // List of Sampling Items
-                model.filtersamplingList.isNotEmpty
+                model.filterSamplingList.isNotEmpty
                     ? Expanded(
                   child: ListView.separated(
-                    itemCount: model.filtersamplingList.length,
+                    itemCount: model.filterSamplingList.length,
                     itemBuilder: (context, index) {
-                      final sampling = model.filtersamplingList[index];
+                      final sampling = model.filterSamplingList[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12.0, vertical: 8.0),

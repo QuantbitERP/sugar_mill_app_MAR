@@ -1,13 +1,9 @@
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:logger/logger.dart';
 import 'package:stacked/stacked.dart';
 import 'package:sugar_mill_app/constants.dart';
 import 'package:sugar_mill_app/views/home_view/home_view_model.dart';
 import 'package:sugar_mill_app/widgets/full_screen_loader.dart';
-
 import '../../models/aadharData_model.dart';
 import '../../router.router.dart';
 
@@ -91,11 +87,23 @@ class _HomePageScreenState extends State<HomePageScreen> {
     return ViewModelBuilder<HomeViewModel>.reactive(
       builder: (context, model, child) => Scaffold(
         appBar: AppBar(
-          title: const AutoSizeText(
-            'Venkateshwara Power Project',
-            style: TextStyle(
-              fontWeight: FontWeight.w400,
-            ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const AutoSizeText(
+                'Venkateshwara Power Project',
+                style: TextStyle(
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              Text(
+                model.appVersion,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            ],
           ),
           actions: [
             IconButton(
@@ -149,167 +157,6 @@ class _HomePageScreenState extends State<HomePageScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          model.dashboard.empName != null
-                              ? Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(20),
-                                    color: Colors.white,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.5),
-                                        // Customize the shadow color and opacity
-                                        spreadRadius: 5,
-                                        blurRadius: 7,
-                                        offset: const Offset(0,
-                                            3), // Customize the shadow offset
-                                      ),
-                                    ],
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(15.0),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceEvenly,
-                                          children: [
-                                            Expanded(
-                                              flex: 3,
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    model.greeting ?? "",
-                                                    style: const TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.w300,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    "${model.dashboard.empName.toString().toUpperCase()},",
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: const TextStyle(
-                                                      fontSize: 22,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    model.dashboard
-                                                                .lastLogType ==
-                                                            "IN"
-                                                        ? 'Last Check-In at ${model.dashboard.lastLogTime.toString()}'
-                                                        : "You're not check-in yet",
-                                                    style: const TextStyle(
-                                                        fontSize: 16),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Expanded(
-                                              flex: 1,
-                                              child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(8.0),
-                                                child: Image.asset(
-                                                  fit: BoxFit.fill,
-                                                  model.imageurl ?? "",
-                                                ),
-                                              ),
-                                            )
-                                          ],
-                                        ),
-                                        const SizedBox(
-                                          height: 10,
-                                        ),
-                                        Center(
-                                          child: OutlinedButton(
-                                            onPressed: () {
-                                              String logtype =
-                                                  model.dashboard.lastLogType ==
-                                                          "IN"
-                                                      ? "OUT"
-                                                      : "IN";
-                                              Logger().i(logtype);
-                                              model.employeeLog(
-                                                  logtype, context);
-                                            },
-                                            style: OutlinedButton.styleFrom(
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(30),
-                                              ),
-                                              side: BorderSide(
-                                                  color: model.dashboard
-                                                              .lastLogType ==
-                                                          "OUT"
-                                                      ? Colors.green
-                                                      : Colors.red,
-                                                  width: 2),
-                                              // Set the border color
-                                              minimumSize: const Size(150,
-                                                  50), // Set the minimum button size
-                                            ),
-                                            child: model.isBusy == true
-                                                ? LoadingAnimationWidget
-                                                    .hexagonDots(
-                                                    color: Colors.blueAccent,
-                                                    size: 18,
-                                                  )
-                                                : Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Image.asset(
-                                                          model.dashboard
-                                                                      .lastLogType ==
-                                                                  "OUT"
-                                                              ? 'assets/images/check-in.png'
-                                                              : 'assets/images/check-out.png',
-                                                          scale: 20),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        model.dashboard
-                                                                    .lastLogType ==
-                                                                "OUT"
-                                                            ? 'Check-In'
-                                                            : 'Check-Out',
-                                                        style: TextStyle(
-                                                            color: model.dashboard
-                                                                        .lastLogType ==
-                                                                    "OUT"
-                                                                ? Colors.green
-                                                                : Colors.red),
-                                                      ),
-                                                    ],
-                                                  ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : const Center(
-                                  child: Card(
-                                    color: Colors.white,
-                                    elevation: 1,
-                                    child: ListTile(
-                                      leading: Icon(Icons.error,
-                                          color: Colors.redAccent, size: 50),
-                                      title: Text(
-                                        'Employee is not created for this user.\nPlease Contact to HR Admin.',
-                                        style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w900),
-                                      ),
-                                    ),
-                                  ),
-                                ),
                           const SizedBox(
                             height: 10.0,
                           ),

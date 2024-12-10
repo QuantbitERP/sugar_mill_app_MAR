@@ -32,7 +32,7 @@ class TripsheetMaster extends StatelessWidget {
                 child: const AutoSizeText('+Add Trip Sheet')),
           ],
         ),
-        body: fullScreenLoader(
+        body: shimmerListView(
             child: RefreshIndicator(
               onRefresh: model.refresh,
               child: Column(

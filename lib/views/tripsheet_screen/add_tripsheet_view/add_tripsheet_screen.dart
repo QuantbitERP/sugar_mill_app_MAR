@@ -20,14 +20,14 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
   Widget build(BuildContext context) {
     return ViewModelBuilder<AddTripSheetModel>.reactive(
       viewModelBuilder: () => AddTripSheetModel(),
-      onViewModelReady: (model) => model.initialise(context, widget.tripId),
+      onViewModelReady: (model) => model.initialize(context, widget.tripId),
       builder: (context, model, child) => Scaffold(
         appBar: AppBar(
           title: model.isEdit == true
               ? Text(model.tripSheetData.name.toString())
               : const Text('New Trip Sheet'),
         ),
-        body: fullScreenLoader(
+        body: shimmerForm(
             child: SingleChildScrollView(
               child: Form(
                 key: model.formKey,
@@ -130,7 +130,7 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                                         .contains(textEditingValue.text
                                             .toLowerCase()));
                               },
-                              onSelected: model.setSelectPlotNo,
+                              onSelected: model.setSelectedPlotNo,
                               fieldViewBuilder: (BuildContext context,
                                   TextEditingController textEditingController,
                                   FocusNode focusNode,
@@ -608,30 +608,65 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                           ),
                         ],
                       ),
-                      CdropDown(
-                        dropdownButton: DropdownButtonFormField<String>(
-                          isExpanded: true,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: CdropDown(
+                              dropdownButton: DropdownButtonFormField<String>(
+                                isExpanded: true,
 
-                          value: model.tripSheetData.vehicleType,
-                          // Replace null with the selected value if needed
-                          decoration: const InputDecoration(
-                            labelText: 'Vehicle Type',
-                          ),
-                          hint: const Text('Select vehicle Type'),
-                          items: model.vehicleTypeList.map((val) {
-                            return DropdownMenuItem<String>(
-                              value: val.name,
-                              child: Text(
-                                val.name ?? "",
-                                style: const TextStyle(color: Colors.black),
+                                value: model.tripSheetData.vehicleType,
+                                // Replace null with the selected value if needed
+                                decoration: const InputDecoration(
+                                  labelText: 'Vehicle Type*',
+                                ),
+                                hint: const Text('Select vehicle Type'),
+                                items: model.vehicleTypeList.map((val) {
+                                  return DropdownMenuItem<String>(
+                                    value: val.name,
+                                    child: Text(
+                                      val.name ?? "",
+                                      style: const TextStyle(color: Colors.black),
+                                    ),
+                                  );
+                                }).toList(),
+                                validator: model.validateVehicleType,
+                                onChanged:
+                                    model.tripSheetData.oldTransporterCode == "SELF"
+                                        ? model.setSelectedVType
+                                        : null,
                               ),
-                            );
-                          }).toList(),
-                          onChanged:
-                              model.tripSheetData.oldTransporterCode == "SELF"
-                                  ? model.setSelectedVType
-                                  : null,
-                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 20,),
+                          Expanded(
+                            child: CdropDown(
+                              dropdownButton: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                value: model.tripSheetData.gangType,
+                                // Replace null with the selected value if needed
+                                decoration: const InputDecoration(
+                                  labelText: 'Gang Type*',
+                                ),
+                                hint: const Text('Select Gang Type'),
+                                items: model.gangTypeList.map((val) {
+                                  return DropdownMenuItem<String>(
+                                    value: val,
+                                    child: Text(
+                                      val,
+                                      style: const TextStyle(color: Colors.black),
+                                    ),
+                                  );
+                                }).toList(),
+                                validator: model.validateGangType,
+                                onChanged:
+                                model.tripSheetData.harvesterCodeOld == "SELF"
+                                    ? model.setSelectedGType
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -764,6 +799,7 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                                 readOnly: model.tripSheetData.oldTransporterCode == "SELF" ? false : true,
                                 onChanged: model.setSelectedEngine,
                                 autofocus: true,
+                                validator: model.validateVehicleNumber,
                               ),
                             ),
                           const SizedBox(width: 20.0),
@@ -782,6 +818,7 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                                 decoration: const InputDecoration(
                                   labelText: 'Tolly 1',
                                 ),
+                                validator: model.validate,
                                 readOnly: model.tripSheetData.oldTransporterCode == "SELF" ? false : true,
                                 onChanged: model.setSelectedTy_1,
                                 autofocus: true,
@@ -797,6 +834,7 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                                 decoration: const InputDecoration(
                                   labelText: 'Tolly 2',
                                 ),
+                                validator: model.validate,
                                 readOnly: model.tripSheetData.oldTransporterCode == "SELF" ? false : true,
                                 onChanged: model.setSelectedTy_2,
                                 autofocus: true,
@@ -966,6 +1004,7 @@ class _AddTripSheetScreenState extends State<AddTripSheetScreen> {
                                 decoration: const InputDecoration(
                                   labelText: 'Water Share(%)',
                                 ),
+                                validator: model.validateWaterShare,
                                 onChanged: model.setSelectedWaterSupShare),
                           ),
                           const SizedBox(

@@ -16,9 +16,6 @@ const kBankpdf = "BankPassbook";
 const kConcentpdf = "ConcentLetter";
 
 const apiBaseUrl = "https://erpvppl.erpdata.in";
-// const apiBaseUrl = "https://migratesugar.erpdata.in";
-// const apiBaseUrl = "http://182.74.29.227:1111";
-
 
 /// api usrls
 String apifetchSeason =

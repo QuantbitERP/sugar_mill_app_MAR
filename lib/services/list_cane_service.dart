@@ -43,12 +43,12 @@ class ListCaneService {
   }
 
   Future<List<CaneListModel>> getCaneListByNameFilter(
-      String season, String name, String village) async {
+      String season, String name, String village,String plotNo) async {
     try {
       
       var dio = Dio();
       String url =
-          '$apiBaseUrl/api/resource/Cane Master?fields=["plantation_status","route_name","crop_variety","name","grower_code","grower_name","plantattion_ratooning_date","survey_number","plot_no"]&filters=[["season","like","$season%"],["grower_name","like","%$name%"],["route_name","like","$village%"]]&order_by=creation desc';
+          '$apiBaseUrl/api/resource/Cane Master?fields=["plantation_status","route_name","crop_variety","name","grower_code","grower_name","plantattion_ratooning_date","survey_number","plot_no"]&filters=[["season","like","$season%"],["plot_no","like","$plotNo%"],["grower_name","like","%$name%"],["route_name","like","$village%"]]&order_by=creation desc';
       Logger().i(url);
       var response = await dio.request(
         url,

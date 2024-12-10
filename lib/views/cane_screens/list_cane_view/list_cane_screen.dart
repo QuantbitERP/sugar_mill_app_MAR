@@ -38,7 +38,7 @@ class ListCaneScreen extends StatelessWidget {
                 child: const AutoSizeText('+Add Cane Master')),
           ],
         ),
-        body: fullScreenLoader(
+        body: shimmerListView(
           child: RefreshIndicator(
             onRefresh: model.refresh,
             child: Column(
@@ -53,6 +53,7 @@ class ListCaneScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(
+                            flex: 1,
                             child: CdropDown(
                               dropdownButton: DropdownButtonFormField<String>(
                                 isExpanded: true,
@@ -60,7 +61,7 @@ class ListCaneScreen extends StatelessWidget {
                                 decoration: const InputDecoration(
                                   labelText: 'Season',
                                 ),
-                                value: model.seasoncontroller.text,
+                                value: model.seasonController.text,
                                 hint: const Text('Select Season'),
                                 items: model.seasonlist.map((val) {
                                   return DropdownMenuItem<String>(
@@ -69,7 +70,7 @@ class ListCaneScreen extends StatelessWidget {
                                   );
                                 }).toList(),
                                 onChanged: (value) {
-                                  model.seasoncontroller.text = value ?? "";
+                                  model.seasonController.text = value ?? "";
                                   model.filterListByNameAndVillage(
                                       season: value);
                                 },
@@ -80,10 +81,31 @@ class ListCaneScreen extends StatelessWidget {
                             width: 10.0,
                           ),
                           Expanded(
+                            flex: 1,
                             child: TextField(
                               // controller: model.villageController,
                               onChanged: (value) {
-                                model.idcontroller.text = value;
+                                model.plotController.text = value;
+                                model.filterListByNameAndVillage(
+                                    plotNo: value);
+                              },
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Plot No',
+
+                                // prefixIcon: Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10.0,
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: TextField(
+                              // controller: model.villageController,
+                              onChanged: (value) {
+                                model.idController.text = value;
                                 model.filterListByNameAndVillage(
                                     village: value);
                               },
@@ -98,9 +120,10 @@ class ListCaneScreen extends StatelessWidget {
                             width: 10.0,
                           ),
                           Expanded(
+                            flex: 2,
                             child: TextField(
                               onChanged: (value) {
-                                model.namecontroller.text = value;
+                                model.nameController.text = value;
                                 model.filterListByNameAndVillage(name: value);
                               },
                               decoration: const InputDecoration(

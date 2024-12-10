@@ -31,7 +31,7 @@ class ListAgriScreen extends StatelessWidget {
                 child: const AutoSizeText('+Add Cane Development')),
           ],
         ),
-        body: fullScreenLoader(
+        body: shimmerListView(
           child: RefreshIndicator(
             onRefresh: model.refresh,
             child: Column(
@@ -46,6 +46,7 @@ class ListAgriScreen extends StatelessWidget {
                       child: Row(
                         children: [
                           Expanded(
+                            flex: 1,
                             child: CdropDown(
                               dropdownButton: DropdownButtonFormField<String>(
                                 isExpanded: true,
@@ -69,6 +70,22 @@ class ListAgriScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
+                            flex: 1,
+                            child: TextField(
+                              onChanged: (value) {
+                                model.plotController.text = value;
+                                model.getAgriListByVillageFarmerNameFilter(
+                                    plot: value);
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Plot No',
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 1,
                             child: TextField(
                               onChanged: (value) {
                                 model.villageController.text = value;
@@ -82,6 +99,7 @@ class ListAgriScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 10),
                           Expanded(
+                            flex: 2,
                             child: TextField(
                               onChanged: (value) {
                                 model.nameController.text = value;

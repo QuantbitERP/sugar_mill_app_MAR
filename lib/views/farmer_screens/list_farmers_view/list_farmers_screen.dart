@@ -29,7 +29,7 @@ class ListFarmersScreen extends StatelessWidget {
            );}, icon: const Icon(Icons.qr_code))
           ],
         ),
-        body:   fullScreenLoader(
+        body:   shimmerListView(
           child: RefreshIndicator(
             onRefresh: model.refresh,
             child: Column(
@@ -118,11 +118,12 @@ class ListFarmersScreen extends StatelessWidget {
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(20),
-                                  gradient: const LinearGradient(
-                                    colors: [Colors.white54, Colors.white],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  color: Colors.white,
+                                  // gradient: const LinearGradient(
+                                  //   colors: [Colors.white54, Colors.white],
+                                  //   begin: Alignment.topLeft,
+                                  //   end: Alignment.bottomRight,
+                                  // ),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.grey.withOpacity(0.3),

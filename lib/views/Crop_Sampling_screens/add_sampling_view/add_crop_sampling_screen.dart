@@ -22,7 +22,7 @@ class AddCropSamplingScreen extends StatelessWidget {
                   ? Text(model.cropsamplingdata.name ?? "")
                   : const Text('Crop Sampling'),
             ),
-            body: fullScreenLoader(
+            body: shimmerForm(
               child: SingleChildScrollView(
                 child: Form(
                   key: model.formKey,

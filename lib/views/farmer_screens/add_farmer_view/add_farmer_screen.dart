@@ -61,7 +61,7 @@ class AddFarmerScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: fullScreenLoader(
+        body: shimmerForm(
           child: SingleChildScrollView(
             child: Form(
               key: model.formKey,

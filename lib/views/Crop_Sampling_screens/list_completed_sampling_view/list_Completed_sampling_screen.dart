@@ -25,7 +25,7 @@ class ListCompletedSamplingScreen extends StatelessWidget {
             ),
           ),
         ),
-        body: fullScreenLoader(
+        body: shimmerListView(
           context: context,
           loader: model.isBusy,
           child: RefreshIndicator(
@@ -43,6 +43,7 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                         children: [
                           // Season Drop-down
                           Expanded(
+                            flex: 1,
                             child: CdropDown(
                               dropdownButton: DropdownButtonFormField<String>(
                                 isExpanded: true,
@@ -61,7 +62,7 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                                 }).toList(),
                                 onChanged: (value) {
                                   model.seasoncontroller.text = value ?? "";
-                                  model.filterListBySeason(name: value);
+                                  model.getListByvillagefarmernameFilter(season: value);
                                 },
                               ),
                             ),
@@ -69,6 +70,22 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                           const SizedBox(width: 10.0),
                           // Village TextField
                           Expanded(
+                            flex: 1,
+                            child: TextField(
+                              onChanged: (value) {
+                                model.plotController.text = value;
+                                model.getListByvillagefarmernameFilter(
+                                    plotNo: value);
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'Plot No',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10.0),
+                          // Village TextField
+                          Expanded(
+                            flex: 1,
                             child: TextField(
                               onChanged: (value) {
                                 model.villagecontroller.text = value;
@@ -83,6 +100,7 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                           const SizedBox(width: 10.0),
                           // Farmer Name TextField
                           Expanded(
+                            flex: 2,
                             child: TextField(
                               onChanged: (value) {
                                 model.namecontroller.text = value;
@@ -115,7 +133,8 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
+
+                            gradient: const LinearGradient(
                               colors: [Colors.white54, Colors.white],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
@@ -172,8 +191,7 @@ class ListCompletedSamplingScreen extends StatelessWidget {
                                                 .format(
                                               DateTime.parse(sampling
                                                   .plantattionRatooningDate ??
-                                                  ""),
-                                            )
+                                                  ""),)
                                                 : "N/A",
                                             style: const TextStyle(
                                               color: Colors.grey,
